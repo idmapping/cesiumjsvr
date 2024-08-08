@@ -1,5 +1,5 @@
 # cesiumjsvr
-An integration resource between cesium js and vr headset
+An integration source code between cesium js and vr headset
 
 ## Specification
 - Dependencies : Cesium JS 1.120
