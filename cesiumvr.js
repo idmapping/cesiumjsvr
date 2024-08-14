@@ -1,6 +1,7 @@
 start = () => {
     if(canvas.width > canvas.height) _element.style.width = _container.clientHeight + 'px';
     else _element.style.height = _container.clientWidth + 'px';
+    setHPR();
 }
 end = () => {
     _element.style.width = _element.style.height = '100%';
@@ -8,21 +9,43 @@ end = () => {
 draw = (view, glLayer) => {
     const viewport = glLayer.getViewport(view);
     gl.viewport(viewport.x + (view.eye == 'left' ? eyeOffset : -eyeOffset), viewport.y, viewport.width, viewport.height);
-    if(view.eye == firstEye && !onDrag) {
-        const orientation = view.transform.orientation;
-        const hprOrigin = Cesium.HeadingPitchRoll.fromQuaternion(new Cesium.Quaternion(orientation.x, orientation.y, orientation.z, orientation.w));
-        const hpr = new Cesium.HeadingPitchRoll(hprOrigin.pitch, hprOrigin.roll, hprOrigin.heading);
-        camera.setView({
-            destination: camera.position,
-            orientation: {
-                heading: hpr.roll,
-                pitch: hpr.pitch - Math.PI / 2,
-                roll: 2 * Math.PI
+    if(view.eye == firstEye) {
+        if(onDrag) setHPR();
+        else {
+            const orientation = view.transform.orientation;
+            const hprOrigin = Cesium.HeadingPitchRoll.fromQuaternion(new Cesium.Quaternion(orientation.x, orientation.y, orientation.z, orientation.w));
+            const hpr = new Cesium.HeadingPitchRoll(hprOrigin.pitch, hprOrigin.roll, hprOrigin.heading);
+            const position = camera.position;
+            if(tilt) {
+                setView(position, getHPR(hpr, 'heading'), getHPR(hpr, 'pitch'), getHPR(hpr, 'roll'));
+            } else {
+                setView(position, hpr.roll, hpr.pitch - Math.PI / 2, 2 * Math.PI);
+                camera.lookRight(hpr.heading);
             }
-        });
-        camera.lookRight(hpr.heading);
+        }
     }
     context.draw(context._drawCommand, context._passState);
+}
+
+function setView(destination, heading, pitch, roll) {
+    camera.setView({
+        destination,
+        orientation: {
+            heading,
+            pitch,
+            roll
+        }
+    });
+}
+
+function getHPR(hpr, att) {
+    return hprCamera[att] + hpr[att] - hprHeadset[att];
+}
+
+function setHPR() {
+    hprCamera.heading = camera.heading;
+    hprCamera.pitch = camera.pitch;
+    hprCamera.roll = camera.roll;
 }
 
 Cesium.DrawCommand.prototype.execute = function(ctx, passState) {
@@ -105,15 +128,30 @@ _container.style.background = 'black';
 _element.style.margin = 'auto';
 
 let onDrag = false;
+let tilt = false;
+
+let hprHeadset = {
+    heading: 0,
+    pitch: 0,
+    roll: 0
+};
+let hprCamera = {
+    heading: 0,
+    pitch: 0,
+    roll: 0
+};
 
 handler.setInputAction(() => {
     onDrag = true;
+    tilt = true;
 }, Cesium.ScreenSpaceEventType.LEFT_DOWN, Cesium.KeyboardEventModifier.CTRL);
 handler.setInputAction(() => {
     onDrag = true;
+    tilt = true;
 }, Cesium.ScreenSpaceEventType.RIGHT_DOWN, Cesium.KeyboardEventModifier.CTRL);
 handler.setInputAction(() => {
     onDrag = true;
+    tilt = true;
 }, Cesium.ScreenSpaceEventType.MIDDLE_DOWN);
 handler.setInputAction(() => {
     onDrag = false;
