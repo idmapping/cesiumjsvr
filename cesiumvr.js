@@ -17,7 +17,14 @@ draw = (view, glLayer) => {
             const hpr = new Cesium.HeadingPitchRoll(hprOrigin.pitch, hprOrigin.roll, hprOrigin.heading);
             const position = camera.position;
             if(tilt) {
-                setView(position, getHPR(hpr, 'heading'), getHPR(hpr, 'pitch'), getHPR(hpr, 'roll'));
+                if(onRotate) {
+                    setHPR();
+                    hprHeadset.heading = hpr.heading;
+                    hprHeadset.pitch = hpr.pitch;
+                    hprHeadset.roll = hpr.roll;
+                    setView(position, camera.heading, camera.pitch, camera.roll);
+                    onRotate = false;
+                } else setView(position, getHPR(hpr, 'heading'), getHPR(hpr, 'pitch'), getHPR(hpr, 'roll'));
             } else {
                 setView(position, hpr.roll, hpr.pitch - Math.PI / 2, 2 * Math.PI);
                 camera.lookRight(hpr.heading);
@@ -129,6 +136,7 @@ _element.style.margin = 'auto';
 
 let onDrag = false;
 let tilt = false;
+let onRotate = false;
 
 let hprHeadset = {
     heading: 0,
@@ -144,14 +152,17 @@ let hprCamera = {
 handler.setInputAction(() => {
     onDrag = true;
     tilt = true;
+    onRotate = true;
 }, Cesium.ScreenSpaceEventType.LEFT_DOWN, Cesium.KeyboardEventModifier.CTRL);
 handler.setInputAction(() => {
     onDrag = true;
     tilt = true;
+    onRotate = true;
 }, Cesium.ScreenSpaceEventType.RIGHT_DOWN, Cesium.KeyboardEventModifier.CTRL);
 handler.setInputAction(() => {
     onDrag = true;
     tilt = true;
+    onRotate = true;
 }, Cesium.ScreenSpaceEventType.MIDDLE_DOWN);
 handler.setInputAction(() => {
     onDrag = false;
