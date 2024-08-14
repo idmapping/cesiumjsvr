@@ -35,6 +35,34 @@ draw = (view, glLayer) => {
     }
     context.draw(context._drawCommand, context._passState);
 }
+runGamepad = (gamepad, hand, pose) => {
+    if(!onFly) {
+        if(gamepad.buttons.length > 5) {
+            if(gamepad.buttons[4].pressed) switchTilt();
+            if(gamepad.buttons[5].pressed) resetView();
+        }
+        if(gamepad.axes.length > 3) {
+            const h = camera.positionCartographic.height * 0.5;
+            if(tilt) {
+                if(hand == 'left') camera.moveUp(calculateAmount(gamepad.axes[3] * speed * (h / 100)));
+                if(hand == 'right') {
+                    camera.moveBackward(calculateAmount(gamepad.axes[3] * speed * (h / 50)));
+                    const rotate = gamepad.axes[2] * speed / 200;
+                    camera.lookRight(rotate);
+                    hprCamera.heading = hprCamera.heading + rotate;
+                }
+            } else {
+                if(hand == 'right') {
+                    camera.rotateUp(gamepad.axes[3] * speed * (h / 1e9));
+                    camera.rotateRight(gamepad.axes[2] * speed * (h / 1e9));
+                }
+                if(hand == 'left') camera.zoomIn(-gamepad.axes[3] * speed * (h / 50));
+            }
+            if(camera.positionCartographic.height < 0) setHeight(0.1 + camera.positionCartographic.height), onRotate = true;
+            if(camera.positionCartographic.height > 75000000) setHeight(75000000);
+        }
+    }
+}
 
 function setView(destination, heading, pitch, roll) {
     camera.setView({
@@ -111,6 +139,18 @@ function stopFly(interval) {
     clearInterval(interval);
 }
 
+function calculateAmount(amount) {
+    if(Math.sign(amount) > 0) amount += 0.5;
+    if(Math.sign(amount) < 0) amount -= 0.5;
+    return amount;
+}
+
+function setHeight(h) {
+    const carto = camera.positionCartographic;
+    carto.height = h;
+    setView(Cesium.Cartographic.toCartesian(carto, ellipsoid), camera.heading, camera.pitch, camera.roll);
+}
+
 Cesium.DrawCommand.prototype.execute = function(ctx, passState) {
     ctx._drawCommand = this, ctx._passState = passState;
     ctx.draw(this, passState);
@@ -178,6 +218,8 @@ const canvas = _scene.canvas;
 const context = _scene.context;
 const camera = widget.camera;
 const handler = widget.screenSpaceEventHandler;
+const globe = _scene.globe;
+const ellipsoid = globe.ellipsoid;
 
 let memory = 2;
 let speed = 1;
