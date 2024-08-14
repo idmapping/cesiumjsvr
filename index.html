@@ -332,7 +332,15 @@
         const context = _scene.context;
         const camera = widget.camera;
 
-        initXR( 'cesiumContainer', context._gl, () => {});
+        widget.useDefaultRenderLoop = false;
+
+        initXR(
+            'cesiumContainer',
+            context._gl,
+            () => {
+                widget.resize(), widget.render();
+            }
+        );
 
     </script>
   </body>
