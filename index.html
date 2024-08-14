@@ -332,6 +332,11 @@
         const context = _scene.context;
         const camera = widget.camera;
 
+        let memory = 2;
+        if(navigator.userAgent.search('OculusBrowser') != -1) {
+            memory = 3;
+        }
+        widget.resolutionScale = 1 * memory;
         widget.useDefaultRenderLoop = false;
 
         _container.style.align = 'center';
