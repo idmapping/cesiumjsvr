@@ -1,10 +1,12 @@
 start = () => {
     if(canvas.width > canvas.height) _element.style.width = _container.clientHeight + 'px';
     else _element.style.height = _container.clientWidth + 'px';
+    if(resetOnStarted) onStarted();
     setHPR();
 }
 end = () => {
     _element.style.width = _element.style.height = '100%';
+    if(resetOnEnded) onEnded();
 }
 draw = (view, glLayer) => {
     const viewport = glLayer.getViewport(view);
@@ -196,6 +198,11 @@ let onRotate = false;
 let onFly = false;
 
 const maxTilt = 15000; // everest / highest level
+const longitude = 118;
+const latitude = -2;
+const height = 25000000;
+const resetOnStarted = true;
+const resetOnEnded = false;
 
 let hprHeadset = {
     heading: 0,
@@ -239,6 +246,23 @@ document.addEventListener('keydown', e => {
     if(e.keyCode == 16) switchTilt();
 });
 
+let resetView = () => {
+    onFly = true;
+    onRotate = true;
+    tilt = false;
+    camera.flyTo({
+        destination: Cesium.Cartesian3.fromDegrees(longitude, latitude, height),
+        orientation: {
+            heading: 2 * Math.PI,
+            pitch: -Math.PI / 2,
+            roll: 0
+        },
+        complete: () => onFly = false
+    });
+}
+let onStarted = resetView;
+let onEnded = resetView;
+
 initXR(
     'cesiumContainer',
     context._gl,
@@ -246,3 +270,6 @@ initXR(
         widget.resize(), widget.render();
     }
 );
+
+setView(Cesium.Cartesian3.fromDegrees(longitude, latitude, height), 2 * Math.PI, -Math.PI / 2, 0);
+createButton('Reset View').onclick = () => resetView();
