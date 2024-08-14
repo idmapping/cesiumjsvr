@@ -8,7 +8,7 @@ end = () => {
 draw = (view, glLayer) => {
     const viewport = glLayer.getViewport(view);
     gl.viewport(viewport.x + (view.eye == 'left' ? eyeOffset : -eyeOffset), viewport.y, viewport.width, viewport.height);
-    if(view.eye == firstEye) {
+    if(view.eye == firstEye && !onDrag) {
         const orientation = view.transform.orientation;
         const hprOrigin = Cesium.HeadingPitchRoll.fromQuaternion(new Cesium.Quaternion(orientation.x, orientation.y, orientation.z, orientation.w));
         const hpr = new Cesium.HeadingPitchRoll(hprOrigin.pitch, hprOrigin.roll, hprOrigin.heading);
@@ -91,6 +91,7 @@ const _scene = widget.scene;
 const canvas = _scene.canvas;
 const context = _scene.context;
 const camera = widget.camera;
+const handler = widget.screenSpaceEventHandler;
 
 let memory = 2;
 if(navigator.userAgent.search('OculusBrowser') != -1) {
@@ -102,6 +103,30 @@ widget.useDefaultRenderLoop = false;
 _container.style.align = 'center';
 _container.style.background = 'black';
 _element.style.margin = 'auto';
+
+let onDrag = false;
+
+handler.setInputAction(() => {
+    onDrag = true;
+}, Cesium.ScreenSpaceEventType.LEFT_DOWN, Cesium.KeyboardEventModifier.CTRL);
+handler.setInputAction(() => {
+    onDrag = true;
+}, Cesium.ScreenSpaceEventType.RIGHT_DOWN, Cesium.KeyboardEventModifier.CTRL);
+handler.setInputAction(() => {
+    onDrag = true;
+}, Cesium.ScreenSpaceEventType.MIDDLE_DOWN);
+handler.setInputAction(() => {
+    onDrag = false;
+}, Cesium.ScreenSpaceEventType.LEFT_UP);
+handler.setInputAction(() => {
+    onDrag = false;
+}, Cesium.ScreenSpaceEventType.RIGHT_UP);
+handler.setInputAction(() => {
+    onDrag = false;
+}, Cesium.ScreenSpaceEventType.MIDDLE_UP);
+document.addEventListener('keyup', e => {
+    if(e.keyCode == 17) onDrag = false;
+});
 
 initXR(
     'cesiumContainer',
