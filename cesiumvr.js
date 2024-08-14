@@ -9,7 +9,7 @@ end = () => {
 draw = (view, glLayer) => {
     const viewport = glLayer.getViewport(view);
     gl.viewport(viewport.x + (view.eye == 'left' ? eyeOffset : -eyeOffset), viewport.y, viewport.width, viewport.height);
-    if(view.eye == firstEye) {
+    if(view.eye == firstEye && !onFly) {
         if(onDrag) setHPR();
         else {
             const orientation = view.transform.orientation;
@@ -53,6 +53,60 @@ function setHPR() {
     hprCamera.heading = camera.heading;
     hprCamera.pitch = camera.pitch;
     hprCamera.roll = camera.roll;
+}
+
+function switchTilt() {
+    if(!onFly) {
+        onFly = true;
+        if(tilt) {
+            let rotateHeading = true;
+            let rotatePitch = true;
+            let rotateRoll = true;
+            const interval = setInterval(() => {
+                let addHeading = camera.heading;
+                let addPitch = camera.pitch;
+                let addRoll = camera.roll;
+                if(rotateHeading) {
+                    const statHeading = camera.heading > Math.PI;
+                    addHeading = statHeading ? camera.heading + (speed * 0.01) : camera.heading - (speed * 0.01);
+                    if((statHeading && addHeading > 2 * Math.PI) || (!statHeading && addHeading < 0) || addHeading == 0 || addHeading == 2 * Math.PI) addHeading = 2 * Math.PI, rotateHeading = false;
+                }
+                if(rotateRoll) {
+                    const statRoll = camera.roll > Math.PI;
+                    addRoll = statRoll ? camera.roll + (speed * 0.01) : camera.roll - (speed * 0.01);
+                    if((statRoll && addRoll > 2 * Math.PI) || (!statRoll && addRoll < 0) || addRoll == 0 || addRoll == 2 * Math.PI) addRoll = 0, rotateRoll = false;
+                }
+                if(rotatePitch) {
+                    const pitchStat = (camera.pitch > 0 && camera.pitch < Math.PI / 2) || (camera.pitch < 0 && camera.pitch > -Math.PI / 2) || camera.pitch == 0;
+                    addPitch = pitchStat ? camera.pitch - (speed * 0.01) : camera.pitch + (speed * 0.01);
+                    if((pitchStat && addPitch < -Math.PI / 2) || (!pitchStat && addPitch > -Math.PI / 2) || addPitch == -Math.PI / 2) addPitch = -Math.PI / 2, rotatePitch = false;
+                }
+                if(!rotateHeading && !rotatePitch && !rotateRoll) {
+                    setView(camera.position, 2 * Math.PI, -Math.PI / 2, 0);
+                    tilt = false;
+                    stopFly(interval);
+                } else setView(camera.position, addHeading, addPitch, addRoll);
+            }, 20);
+        } else if(camera.positionCartographic.height < maxTilt) {
+            let count = 0;
+            setView(camera.position, 2 * Math.PI, -Math.PI / 2, 0);
+            const interval = setInterval(() => {
+                count++;
+                setView(camera.position, 2 * Math.PI, speed * count / 100 - Math.PI / 2, 0);
+                if(camera.pitch > 0) {
+                    setView(camera.position, 2 * Math.PI, 0, 0);
+                    tilt = true;
+                    stopFly(interval);
+                }
+            }, 20);
+        } else onFly = false;
+    }
+}
+
+function stopFly(interval) {
+    onFly = false;
+    onRotate = true;
+    clearInterval(interval);
 }
 
 Cesium.DrawCommand.prototype.execute = function(ctx, passState) {
@@ -124,8 +178,10 @@ const camera = widget.camera;
 const handler = widget.screenSpaceEventHandler;
 
 let memory = 2;
+let speed = 1;
 if(navigator.userAgent.search('OculusBrowser') != -1) {
     memory = 3;
+    speed = 2;
 }
 widget.resolutionScale = 1 * memory;
 widget.useDefaultRenderLoop = false;
@@ -137,6 +193,9 @@ _element.style.margin = 'auto';
 let onDrag = false;
 let tilt = false;
 let onRotate = false;
+let onFly = false;
+
+const maxTilt = 15000; // everest / highest level
 
 let hprHeadset = {
     heading: 0,
@@ -175,6 +234,9 @@ handler.setInputAction(() => {
 }, Cesium.ScreenSpaceEventType.MIDDLE_UP);
 document.addEventListener('keyup', e => {
     if(e.keyCode == 17) onDrag = false;
+});
+document.addEventListener('keydown', e => {
+    if(e.keyCode == 16) switchTilt();
 });
 
 initXR(
