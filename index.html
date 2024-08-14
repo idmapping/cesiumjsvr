@@ -246,6 +246,11 @@
             }
         });
 
+        const _scene = widget.scene;
+        const context = _scene.context;
+
+        initXR( 'cesiumContainer', context._gl, () => {});
+
     </script>
   </body>
 </html>
