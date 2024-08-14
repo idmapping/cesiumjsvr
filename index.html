@@ -2,6 +2,8 @@
 <html>
   <head>
     <title>CesiumJS VR by IDMapping</title>
+    <script src="https://cesium.com/downloads/cesiumjs/releases/1.120/Build/Cesium/Cesium.js"></script>
+    <link href="https://cesium.com/downloads/cesiumjs/releases/1.120/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
     <style>
       html,
       body {
@@ -11,6 +13,7 @@
     </style>
   </head>
   <body>
+    <div id="cesiumContainer"></div>
     <script>
 
         let container, gl, program, refSpace, xrSession, buttons, xrButton, renderGL, firstEye,
@@ -234,6 +237,14 @@
         function onVisibilityChange(e) {
             if(event.session.visibilityState === 'visible-blurred') {} else if(event.session.visibilityState === 'visible') {}
         }
+
+        const widget = new Cesium.CesiumWidget('cesiumContainer', {
+            contextOptions: {
+                webgl: {
+                    xrCompatible: true
+                }
+            }
+        });
 
     </script>
   </body>
