@@ -238,6 +238,38 @@
             if(event.session.visibilityState === 'visible-blurred') {} else if(event.session.visibilityState === 'visible') {}
         }
 
+        start = () => {
+            if(canvas.width > canvas.height) _element.style.width = _container.clientHeight + 'px';
+            else _element.style.height = _container.clientWidth + 'px';
+        }
+        end = () => {
+            _element.style.width = _element.style.height = '100%';
+        }
+        draw = (view, glLayer) => {
+            const viewport = glLayer.getViewport(view);
+            gl.viewport(viewport.x + (view.eye == 'left' ? eyeOffset : -eyeOffset), viewport.y, viewport.width, viewport.height);
+            if(view.eye == firstEye) {
+                const orientation = view.transform.orientation;
+                const hprOrigin = Cesium.HeadingPitchRoll.fromQuaternion(new Cesium.Quaternion(orientation.x, orientation.y, orientation.z, orientation.w));
+                const hpr = new Cesium.HeadingPitchRoll(hprOrigin.pitch, hprOrigin.roll, hprOrigin.heading);
+                camera.setView({
+                    destination: camera.position,
+                    orientation: {
+                        heading: hpr.roll,
+                        pitch: hpr.pitch - Math.PI / 2,
+                        roll: 2 * Math.PI
+                    }
+                });
+                camera.lookRight(hpr.heading);
+            }
+            context.draw(context._drawCommand, context._passState);
+        }
+
+        Cesium.DrawCommand.prototype.execute = function(ctx, passState) {
+            ctx._drawCommand = this, ctx._passState = passState;
+            ctx.draw(this, passState);
+        };
+
         const widget = new Cesium.CesiumWidget('cesiumContainer', {
             contextOptions: {
                 webgl: {
@@ -246,8 +278,12 @@
             }
         });
 
+        const _container = widget.container;
+        const _element = widget._element;
         const _scene = widget.scene;
+        const canvas = _scene.canvas;
         const context = _scene.context;
+        const camera = widget.camera;
 
         initXR( 'cesiumContainer', context._gl, () => {});
 
