@@ -1,4 +1,4 @@
-Cesium.Ion.defaultAccessToken = 'YOUR_ION_ACCESS_TOKEN';
+// Cesium.Ion.defaultAccessToken = 'YOUR_ION_ACCESS_TOKEN';
 start = () => {
     if(canvas.width > canvas.height) _element.style.width = _container.clientHeight + 'px';
     else _element.style.height = _container.clientWidth + 'px';
